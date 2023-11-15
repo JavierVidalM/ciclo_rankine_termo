@@ -27,7 +27,7 @@ def calcular():
 
 
     #proceso 1
-    presion1 = 0.1 #bar
+    presion1 = 0.01 #bar
     entropia1 = steamTable.sL_p(presion1)
     temperatura1 = steamTable.t_ps(presion1, entropia1)
     entalpia1 = steamTable.hL_p(presion1)
@@ -184,11 +184,11 @@ esc_fjo = Scale(main,from_ = 1000, to = 3000,length=390, tickinterval=200, orien
 esc_fjo.place(x=90,y=100)
 
 #Rango temperatura
-Temp_Label = Label(main, text="Temperatura\nEntrada (°C)",bg=bgc,fg='white')
-Temp_Label.place(x=10,y=190)
+# Temp_Label = Label(main, text="Temperatura\nEntrada (°C)",bg=bgc,fg='white')
+# Temp_Label.place(x=10,y=190)
 
-esc_temp = Scale(main,from_ = 100, to = 340,length=390, tickinterval=20, orient = HORIZONTAL,bd=0,bg=bgc,fg='white')  
-esc_temp.place(x=90,y=180)
+# esc_temp = Scale(main,from_ = 100, to = 340,length=390, tickinterval=20, orient = HORIZONTAL,bd=0,bg=bgc,fg='white')  
+# esc_temp.place(x=90,y=180)
 
 Fjo=IntVar()
 Texto1 = Label(None, text="Flujo Entrada\n(Kg/s)",bg=bgc,fg='white').place(x=500, y=85)
