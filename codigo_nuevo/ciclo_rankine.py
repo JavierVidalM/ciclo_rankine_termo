@@ -70,7 +70,7 @@ def calcular():
     #calculo del trabajo generado por la turbina
     W_tur = flujo_segundo*(entalpia3-entalpia4)
     #calculo del trabajo usado por la bomba
-    W_bom = w_p
+    W_bom =flujo_segundo*w_p
     ef = ((W_tur-W_bom)/Q_en)*100
 
     #convertir los valores a string
