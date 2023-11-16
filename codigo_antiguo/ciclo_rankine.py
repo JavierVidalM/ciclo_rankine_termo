@@ -2,6 +2,7 @@ from tkinter import *
 import matplotlib.pyplot as plt
 import sys
 from pyXSteam.XSteam import XSteam
+import os
 
 bgc = 'slate gray'
 
@@ -36,12 +37,18 @@ def calcular():
     volumen1 = steamTable.vL_p(presion1)
 
     #proceso 2
-
-    presion2 = 140 #bar
+    presion2 = 140  # bar
     entropia2 = entropia1
-    entalpia2 = volumen1*(presion2-presion1)+entalpia1
+
+
     volumen2 = steamTable.vL_p(presion2)
-    temperatura2 = temperatura1*(   )
+
+    # Puedes calcular la temperatura 2 utilizando la relación (T*v)_1 = (T*v)_2
+    # En este caso, la ecuación sería: temperatura2 = temperatura1 * (volumen1 / volumen2)
+    temperatura2 = temperatura1 * (volumen1 / volumen2)
+    # Calcular entalpía 2 usando la función h_pt
+    entalpia2 = steamTable.h_pt(presion2, temperatura2)
+
 
     #proceso 3
 
@@ -165,9 +172,10 @@ main.config(bg='slate gray')
 Titulo = Label(main, text="Ciclo de Rankine",bg=bgc,fg='white',font=(('Sans Serif'),30,'bold')).place(x=10,y=10)                                        
 
 #Diagrama del ciclo
-img=PhotoImage(file='rankine.png')
-rnk_img = Label(main, bg=bgc,image=img)
-rnk_img.place(x=630,y=50)
+ruta_imagen = os.path.join(os.path.dirname(__file__), 'rankine.png')
+img = PhotoImage(file=ruta_imagen)
+rnk_img = Label(main, bg=bgc, image=img)
+rnk_img.place(x=630, y=50)
 
 cal = IntVar()
 Caldera = Entry(main,textvariable=(cal,'W'))
