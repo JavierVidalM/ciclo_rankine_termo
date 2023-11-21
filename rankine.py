@@ -2,7 +2,7 @@ from bokeh.models import ColumnDataSource, Slider
 from bokeh.layouts import column, row
 from pyXSteam.XSteam import XSteam
 from bokeh.plotting import figure
-from bokeh.models import Div
+from bokeh.models import Div, Text
 from bokeh.io import curdoc
 import numpy as np
 from bokeh.models import HTMLTemplateFormatter
@@ -17,21 +17,16 @@ Las unidades de medida que utiliza el XSteam con el systema "BARE" son las sigui
 - Kelvin [°K]
 - Mega Pascales [MPa]*
 - Watts [W]
-
-* Los valores de las presiones deben ser multiplicados por 1000 al estar en MPa, 
-ya que para el programa se utilizan valores en KPa, para tenerlo en cuenta 
 '''
 steamTable = XSteam(XSteam.UNIT_SYSTEM_BARE)
-'''
-La calidad del fluido en el punto 3 se considera como 1 al considerar el ciclo
-como un Ciclo de Rankine ideal, por lo mismo se establece que la calidad en el punto 1 es 0 
-'''
-X3 = 1
-X1 = 0
 
+
+'''
+Se define la estructura de datos del grafico como vacío 
+para actualizarlo una vez se modifiquen los datos en bokeh
+'''
 source = ColumnDataSource(data=dict(x=[], y=[]))
 
-curdoc().theme.theme = 'dark_minimal'
 
 def Calcular(TL,TH, CB):
     # Definir valores iniciales
@@ -51,73 +46,28 @@ def Calcular(TL,TH, CB):
     # PUNTO 1 - Salida del condensador, antes de la bomba
     Temp1 = TL
     Pres1 = 0.01 #10 kPa
+    # Se calculan los valores de entalpía y entropía con hL ya que son liquido saturado en este punto del ciclo
     h1 = steamTable.hL_t(Temp1)
     s1 = steamTable.sL_t(Temp1)
-    
-    PUNTO1 = f'''
-    ====  PUNTO 1  ====
-    Temperatura 1:
-    {Temp1 - 273.15}
-    Presión 1:
-    {Pres1}
-    Entalpía 1:
-    {h1}
-    Entropía 1:
-    {s1}
-    '''
-    
-    print(PUNTO1)
 
     
     # PUNTO 2 - Salida de la bomba, antes de la caldea
     s2 = s1
     Pres2 = CB.value
     Temp2 = steamTable.t_ps(Pres2, s2)
-
-    # Trabajo de entrada [Win] - BOMBA
     h2 = steamTable.h_ps(Pres2,s2)
     
-    '''
-    BOMBA
-    '''
-    # Win = VolEsp * (Pres2 - Pres1)
-    Win = -(h2 - h1)
-    
-    
-    PUNTO2 = f'''
-        ====  PUNTO 2  ====
-        Temperatura 2:
-        {Temp2 - 273.15}
-        Presión 2:
-        {Pres2}
-        Entalpía 2:
-        {h2}
-        Entropía 2:
-        {s2}
-        '''
-        
-    print(PUNTO2)
+    # Calculo del trabajo requerido por la bomba
+    W_bmb = -(h2 - h1)
     
     
     # PUNTO 3 - Salida de la caldera, antes de la turbina
     Pres3 = Pres2
     Temp3 = TH
+    # Se calculan los valores de entalpía y entropía con hV al ser vapor saturado a alta presión
     h3 = steamTable.hV_p(Pres3)
     s3 = steamTable.sV_t(Temp3)
-    
-    PUNTO3 = f'''
-        ====  PUNTO 3  ====
-        Temperatura 3:
-        {Temp3 - 273.15}
-        Presión 3:
-        {Pres3}
-        Entalpía 3:
-        {h3}
-        Entropía 3:
-        {s3}
-        '''
-        
-    print(PUNTO3)
+
     
     # PUNTO 4 - Salida de la turbina, antes del condensador --> PUNTO 1 
     s4 = s3
@@ -128,72 +78,47 @@ def Calcular(TL,TH, CB):
     #trabajo de la turbina
     W_tur = (h3 - h4)
 
-    PUNTO4 = f'''
-        ====  PUNTO 4  ====
-        Temperatura 4:
-        {Temp4 - 273.15}
-        Presión 4:
-        {Pres4}
-        Entalpía 4:
-        {h4}
-        Entropía 4:
-        {s4}
-        '''
-        
-    print(PUNTO4)
-    
+    # Q de entrada y Q de salida
     Qin = (h3 - h2)
     Qout = (h4 - h1)
     
-    Wn = Qin - Qout
+    # Eficiencia    
+    n = ((W_tur + W_bmb)/Qin)*100
+
     
-    # n = (W_tur-Win)/Qin*100
-    n = ((W_tur + Win)/Qin)*100
-
-    STATS = f'''
-        El trabajo requerido por la bomba es de {round(Win,4)} [kJ/kg]
-        El trabajo que produce la turbina es de {round(W_tur,4)} [kJ/kg]
-        
-        Q entrada {Qin}
-        Q salida {Qout}
-        
-        La eficiencia del sistema es de un {round(n,2)} %
-    '''
-    print(STATS)
-    
-    Mostrar_resultados(Pres1,Pres2,Pres3,Pres4,Temp1,Temp2,Temp3,Temp4,h1,h2,h3,h4,s1,s2,s3,s4,Qin,Qout,n,Win,W_tur)
+    Mostrar_resultados(Pres1,Pres2,Pres3,Pres4,Temp1,Temp2,Temp3,Temp4,h1,h2,h3,h4,s1,s2,s3,s4,Qin,Qout,n,W_bmb,W_tur)
 
 
-def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S3, S4,Qin, Qout, n,Win,W_tur):
+def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S3, S4,Qin, Qout, n,W_bmb,W_tur):
         #Proceso 1 
-    infopto1temperatura.text = f"Temperatura: {T1}"
-    infopto1presion.text = f"Presión: {P1}"
-    infopto1entalpia.text = f"Entalpía: {H1}"
-    infopto1entropia.text = f"Entropía: {S1}"
+    infopto1temperatura.text = f"Temperatura: {round(T1,4)} [°K]"
+    infopto1presion.text = f"Presión: {round(P1,4)} [MPa]"
+    infopto1entalpia.text = f"Entalpía: {round(H1,4)} [kJ/kg]"
+    infopto1entropia.text = f"Entropía: {round(S1,4)} [kJ/kg]"
     #Proceso 2 
-    infopto2temperatura.text = f"Temperatura: {T2}"
-    infopto2presion.text = f"Presión: {P2}"
-    infopto2entalpia.text = f"Entalpía: {H2}"
-    infopto2entropia.text = f"Entropía: {S2}"
+    infopto2temperatura.text = f"Temperatura: {round(T2,4)} [°K]"
+    infopto2presion.text = f"Presión: {round(P2,4)} [MPa]"
+    infopto2entalpia.text = f"Entalpía: {round(H2,4)} [kJ/kg]"
+    infopto2entropia.text = f"Entropía: {round(S2,4)} [kJ/kg]"
 
     #Proceso 3 
-    infopto3temperatura.text = f"Temperatura: {T3}"
-    infopto3presion.text = f"Presión: {P3}"
-    infopto3entalpia.text = f"Entalpía: {H3}"
-    infopto3entropia.text = f"Entropía: {S3}"
+    infopto3temperatura.text = f"Temperatura: {round(T3,4)} [°K]"
+    infopto3presion.text = f"Presión: {round(P3,4)} [MPa]"
+    infopto3entalpia.text = f"Entalpía: {round(H3,4)} [kJ/kg]"
+    infopto3entropia.text = f"Entropía: {round(S3,4)} [kJ/kg]"
 
     #Proceso 4
-    infopto4temperatura.text = f"Temperatura: {T4}"
-    infopto4presion.text = f"Presión: {P4}"
-    infopto4entalpia.text = f"Entalpía: {H4}"
-    infopto4entropia.text = f"Entropía: {S4}"
+    infopto4temperatura.text = f"Temperatura: {round(T4,4)} [°K]"
+    infopto4presion.text = f"Presión: {round(P4,4)} [MPa]"
+    infopto4entalpia.text = f"Entalpía: {round(H4,4)} [kJ/kg]"
+    infopto4entropia.text = f"Entropía: {round(S4,4)} [kJ/kg]"
     #Datos eficiencia
-    infobomba.text=f"El trabajo requerido por la bomba es de {round(Win,4)} [kJ/kg]"
-    infoturbina.text=f"El trabajo que produce la turbina es de {round(W_tur,4)} [kJ/kg]"
-    eficiencia.text=f"La eficiencia del sistema es de un {round(n,2)} %"
+    infobomba.text=f"El trabajo requerido por la bomba es de: {round(W_bmb,4)} [kJ/kg]"
+    infoturbina.text=f"El trabajo que produce la turbina es de: {round(W_tur,4)} [kJ/kg]"
+    eficiencia.text=f"La eficiencia del sistema es de un {round(n,2)}%"
     
-    Qentrada.text=f"Q entrada {Qin}"
-    Qsalida.text=f"Q salida {Qout}"
+    Qentrada.text=f"Q de entrada: {round(Qin,4)} [kJ/kg]"
+    Qsalida.text=f"Q de salida: {round(Qout,4)} [kJ/kg]"
 
     entropia = [S1, S2, S3, S4]
     temperatura = [T1, T2, T3, T4]
@@ -210,12 +135,12 @@ plot = figure(
     height = 500,
     width = 500,
     title = "Ciclo Rankine",
-    tools = "crosshair, pan, reset, save, wheel_zoom",
+    tools = "pan, reset, save, wheel_zoom",
     toolbar_location = 'above',
     x_axis_label = "Entropía",
     y_axis_label = "Temperatura (K)",
-    x_range = (0, 10),
-    y_range = (0, 600)
+    x_range = (-1, 10),
+    y_range = (200, 800)
 )
 
 plot.line(
@@ -226,9 +151,12 @@ plot.line(
     line_alpha = 0.6
 )
 
+titulo = Div(
+    text = "<h1>Ciclo de rankine</h1>"
+)
 
 temperatura_H = Slider(
-    title ="Temperatura de salida Caldera (C)",
+    title ="Temperatura de salida Caldera (°C)",
     value = 200,
     start = 150,
     end = 370,
@@ -244,7 +172,7 @@ temperatura_L = Slider(
 )
 
 
-ratio_compresion = Slider(
+compresion_bomba = Slider(
     title = "Compresión de salida de la Bomba (MPa)",
     value = 5,
     start = 5.0,
@@ -252,52 +180,47 @@ ratio_compresion = Slider(
     step = 1
 )
 
-# Actualizar los valores modificando los sliders
-temperatura_L.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,ratio_compresion))
-temperatura_H.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,ratio_compresion))
-ratio_compresion.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,ratio_compresion))
+# Actualizar los valores de los sliders
+temperatura_L.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,compresion_bomba))
+temperatura_H.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,compresion_bomba))
+compresion_bomba.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,compresion_bomba))
 
 
-# Cajas de texto
+# Configuración de los textos de información
 
 # Punto 1
-
-infopto1temperatura = Div(width=400, height=50)
-infopto1presion = Div(width=400, height=50)
-infopto1entalpia = Div(width=400, height=50)
-infopto1entropia = Div(width=400, height=50)
+infopto1temperatura = Div(width=400, height=10)
+infopto1presion = Div(width=400, height=10)
+infopto1entalpia = Div(width=400, height=10)
+infopto1entropia = Div(width=400, height=10)
 
 # Punto 2
-
-infopto2entalpia = Div(width=400, height=50)
-infopto2entropia = Div(width=400, height=50)
-infopto2presion =  Div( width=400, height=50)
-infopto2temperatura = Div( width=400, height=50)
+infopto2entalpia = Div(width=400, height=10)
+infopto2entropia = Div(width=400, height=10)
+infopto2presion =  Div( width=400, height=10)
+infopto2temperatura = Div( width=400, height=10)
 
 # Punto 3
-
-infopto3temperatura = Div(width=400, height=50)
-infopto3presion = Div(width=400, height=50)
-infopto3entalpia = Div(width=400, height=50)
-infopto3entropia = Div(width=400, height=50)
+infopto3temperatura = Div(width=400, height=10)
+infopto3presion = Div(width=400, height=10)
+infopto3entalpia = Div(width=400, height=10)
+infopto3entropia = Div(width=400, height=10)
 
 # Punto 4
-
-infopto4temperatura = Div( width=400, height=50)
-infopto4presion = Div( width=400, height=50)
-infopto4entalpia = Div( width=400, height=50)
-infopto4entropia = Div( width=400, height=50)
+infopto4temperatura = Div( width=400, height=10)
+infopto4presion = Div( width=400, height=10)
+infopto4entalpia = Div( width=400, height=10)
+infopto4entropia = Div( width=400, height=10)
 
 #Eficiencia
-infobomba=Div( width=400, height=50)
-infoturbina= Div( width=400, height=50)
-eficiencia= Div(width=400, height=50)
-Qentrada= Div( width=400, height=50)
-Qsalida= Div( width=400, height=50)
+infobomba=Div( width=400, height=10)
+infoturbina= Div( width=400, height=10)
+eficiencia= Div(width=400, height=10)
+Qentrada= Div( width=400, height=10)
+Qsalida= Div( width=400, height=10)
 
 
-
-#probandoo
+# Estilo para los titulos
 estilos_css = """
 <style>
 body {
@@ -310,14 +233,18 @@ h2 {
     color: #428bca; 
 }
 
+.footer {
+    text-align: center;
+    padding: 10px;
+}
+
 </style>
 """
 
 
-# Información
-
+# Procesos
 info_proceso_1 = column(
-    Div(text=estilos_css + "<h2>PROCESO 1</h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>PROCESO 1</h2>", width=400, height=40),
     infopto1temperatura,
     infopto1presion,
     infopto1entalpia,
@@ -325,7 +252,7 @@ info_proceso_1 = column(
 )
 
 info_proceso_2 = column(
-    Div(text=estilos_css + "<h2>PROCESO 2</h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>PROCESO 2</h2>", width=400, height=40),
     infopto2temperatura,
     infopto2presion,
     infopto2entalpia,
@@ -333,7 +260,7 @@ info_proceso_2 = column(
 )
 
 info_proceso_3 = column(
-    Div(text=estilos_css + "<h2>PROCESO 3</h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>PROCESO 3</h2>", width=400, height=40),
     infopto3temperatura,
     infopto3presion,
     infopto3entalpia,
@@ -341,20 +268,29 @@ info_proceso_3 = column(
 )
 
 info_proceso_4 = column(
-    Div(text=estilos_css + "<h2>PROCESO 4</h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>PROCESO 4</h2>", width=400, height=40),
     infopto4temperatura,
     infopto4presion,
     infopto4entalpia,
     infopto4entropia
 )
-# Información
+
 info_datos=column(
-    Div(text=estilos_css + "<h2>Eficiencia </h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>Datos Finales </h2>", width=400, height=40),
     infobomba,
     infoturbina,
     eficiencia,
     Qentrada,
     Qsalida,
+)
+
+nombres = Div(text = estilos_css +
+             """
+             <footer class="footer">
+             <h3>Ciclo de rankine por Fabián Espinoza, Miguel Quintero, Miguel Quiroz, Nicolás Sanchez y Javier Vidal.</h3>
+             <p>© 2023. Todos los derechos resevados.</p>
+             </footer>
+             """,
 )
 
 info_procesos = column(
@@ -365,19 +301,12 @@ info_procesos = column(
     info_datos
 )
 
-inputs = column(
-    temperatura_H,
-    temperatura_L,
-    ratio_compresion,
-)
 # Organizar los widgets
 inputs = column(
+    titulo,
     temperatura_H,
     temperatura_L,
-    ratio_compresion,
-    infopto4presion,
-    infopto4entalpia,
-    infopto4entropia
+    compresion_bomba,
 )
 
 # Gráfica de la curva de entropía
@@ -400,19 +329,21 @@ plot.line(
     line_color = (255,0,0)
 )
 
-
-
-layout = row(
-    inputs,
-    plot,
-    column(
-        row(column(info_proceso_1), column(info_proceso_2)),
-        row(column(info_proceso_3), column(info_proceso_4)),
-        info_datos,
+# Información de los procesos
+layout = column(
+    row(
+        inputs,
+        plot,
+        column(
+            row(column(info_proceso_1), column(info_proceso_2)),
+            row(column(info_proceso_3), column(info_proceso_4)),
+            info_datos,
+        ),
+        # width=100
     ),
-    width=800
+    nombres
 )
-
 
 curdoc().add_root(layout)
 curdoc().title = "Ciclo de Rankine"
+Calcular(temperatura_L,temperatura_H,compresion_bomba)
