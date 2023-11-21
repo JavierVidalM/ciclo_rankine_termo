@@ -4,6 +4,7 @@ from pyXSteam.XSteam import XSteam
 from bokeh.plotting import figure
 from bokeh.models import Div
 from bokeh.io import curdoc
+import numpy as np
 
 
 # Crear la fuente de datos
@@ -359,6 +360,27 @@ inputs = column(
     infopto4entalpia,
     infopto4entropia
 )
+
+# Gráfica de la curva de entropía
+
+# Se generan los datos de temperatura para el rango de los datos
+T = np.linspace(274,647,400)
+# Se extraen de la tabla los datos de entropía en base a la temperatura
+svap = [s for s in [steamTable.sL_t(t) for t in T]]
+sliq = [s for s in [steamTable.sV_t(t) for t in T]]
+
+plot.line(
+    x = svap,
+    y = T,
+    line_color = (0,0,255)
+)
+
+plot.line(
+    x = sliq,
+    y = T,
+    line_color = (255,0,0)
+)
+
 
 # Agregar al documento
 layout = row(inputs, column(plot,info_procesos), width=600)
