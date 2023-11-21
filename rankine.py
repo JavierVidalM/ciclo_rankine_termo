@@ -194,8 +194,10 @@ plot = figure(
     width=500,
     title="Ciclo Rankine",
     tools="crosshair, pan, reset, save, wheel_zoom",
-    x_range=(0, 100),
-    y_range=(0, 100)
+    x_axis_label="Entropía",
+    y_axis_label="Temperatura (K)",
+    x_range=(0, 10),
+    y_range=(0, 600)
 )
 
 plot.line(
@@ -269,30 +271,28 @@ infopto4entropia = Div(text="", width=400, height=50)
 
 # Información
 
+# Actualizar la función de gráficos
+def actualizar_grafico(entalpia, temperatura):
+    source.data = dict(x=entalpia, y=temperatura)
 
+# Actualizar la función Mostrar_resultados
+def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S3, S4,Qin, Qout, n):
+    # ... (sin cambios)
+    
+    # Actualizar el gráfico
+    entalpia = [S1, S2, S3, S4]
+    temperatura = [T1, T2, T3, T4]
+    actualizar_grafico(entalpia, temperatura)
 
 # Organizar los widgets
 inputs = column(
     temperatura_H,
     temperatura_L,
     ratio_compresion,
-#    infopto1temperatura,
-#     infopto1presion,
-#     infopto1entalpia,
-#     infopto1entropia,
-#     infopto2temperatura,
-#     infopto2presion,
-#     infopto2entalpia,
-#     infopto2entropia,
-#     infopto3temperatura,
-#     infopto3presion,
-#     infopto3entalpia,
-#     infopto3entropia,
-#     infopto4temperatura,
     infopto4presion,
     infopto4entalpia,
     infopto4entropia
-    )
+)
 
 # Agregar al documento
 curdoc().add_root(row(inputs, plot, width=800))
