@@ -31,37 +31,32 @@ X1 = 0
 
 source = ColumnDataSource(data=dict(x=[], y=[]))
 
-def Calcular(TL,TH, Fm, RC):
+def Calcular(TL,TH, RC):
     # Definir valores iniciales
     '''
     Las temperaturas por la librería de pyXSteam las está 
     calculando actualmente en Kelvin pero los sliders toman
     la temperatura en Celcius.
     '''
-    Fm = Fm.value
     TH = TH.value + 273.15
     TL = TL.value + 273.15
     
     # PUNTO 1 - Salida del condensador, antes de la bomba
     Temp1 = TL
-    Pres1 = steamTable.psat_t(Temp1) * 1000
+    Pres1 = 0.01 #kPa   
     h1 = steamTable.hL_t(Temp1)
     s1 = steamTable.sL_t(Temp1)
-    VolEsp = steamTable.v_ph(Pres1,h1)
     
     PUNTO1 = f'''
     ====  PUNTO 1  ====
     Temperatura 1:
-    {Temp1}
+    {Temp1 - 273.15}
     Presión 1:
     {Pres1}
     Entalpía 1:
     {h1}
     Entropía 1:
     {s1}
-    
-    Volumen Específico:
-    {VolEsp}
     '''
     
     print(PUNTO1)
@@ -85,13 +80,13 @@ def Calcular(TL,TH, Fm, RC):
     BOMBA
     '''
     # Win = VolEsp * (Pres2 - Pres1)
-    Win = Fm * (h2 - h1)
+    Win = -(h2 - h1)
     
     
     PUNTO2 = f'''
         ====  PUNTO 2  ====
         Temperatura 2:
-        {Temp2}
+        {Temp2 - 273.15}
         Presión 2:
         {Pres2}
         Entalpía 2:
@@ -106,13 +101,13 @@ def Calcular(TL,TH, Fm, RC):
     # PUNTO 3 - Salida de la caldera, antes de la turbina
     Pres3 = Pres2
     Temp3 = TH
-    h3 = steamTable.hV_t(Temp3)
+    h3 = steamTable.hV_p(Pres3)
     s3 = steamTable.sV_t(Temp3)
     
     PUNTO3 = f'''
         ====  PUNTO 3  ====
         Temperatura 3:
-        {Temp3}
+        {Temp3 - 273.15}
         Presión 3:
         {Pres3}
         Entalpía 3:
@@ -128,15 +123,15 @@ def Calcular(TL,TH, Fm, RC):
     Pres4 = Pres1
     Temp4 = steamTable.t_ps(Pres4,s4)
     # X4 = steamTable.x_ps(Pres4, s4)
-    h4 = steamTable.hV_p(Pres4)
+    h4 = steamTable.h_ps(Pres4,s4)
     
     #trabajo de la turbina
-    W_tur = (h3 - h4) * Fm
+    W_tur = (h3 - h4)
 
     PUNTO4 = f'''
         ====  PUNTO 4  ====
         Temperatura 4:
-        {Temp4}
+        {Temp4 - 273.15}
         Presión 4:
         {Pres4}
         Entalpía 4:
@@ -148,12 +143,12 @@ def Calcular(TL,TH, Fm, RC):
     print(PUNTO4)
     
     Qin = (h3 - h2)
-    Qout = (h1 - h4)
+    Qout = (h4 - h1)
     
     Wn = Qin - Qout
     
     # n = (W_tur-Win)/Qin*100
-    n = (W_tur - Win)/ (Qin * Fm)
+    n = ((W_tur + Win)/Qin)*100
 
     STATS = f''''
         El trabajo requerido por la bomba es de {round(Win,4)} [kJ/kg]
@@ -216,7 +211,7 @@ temperatura_H = Slider(
     title="Temperatura de salida Caldera (C)",
     value=200,
     start=110,
-    end=300,
+    end=350,
     step=10
 )
 
@@ -228,28 +223,18 @@ temperatura_L = Slider(
     step=5
 )
 
-flujo_masico = Slider(
-    title="Flujo másico (kg/s)",
-    value=100,
-    start=100,
-    end=1000,
-    step=20
-)
-
 ratio_compresion = Slider(
-    title="Ratio de Compresión para la Bomba",
-    value=2.0,
-    start=1.1,
+    title="Ratio de Compresión para la Bomba (MPa)",
+    value=0.01,
+    start=1.0,
     end=5.0,
-    step=0.1
+    step=1
 )
 
 # Asociar la función de actualización al evento 'value_changed'
-temperatura_L.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,flujo_masico,ratio_compresion))
-temperatura_H.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,flujo_masico,ratio_compresion))
-flujo_masico.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,flujo_masico,ratio_compresion))
-flujo_masico.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,flujo_masico,ratio_compresion))
-ratio_compresion.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,flujo_masico,ratio_compresion))
+temperatura_L.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,ratio_compresion))
+temperatura_H.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,ratio_compresion))
+ratio_compresion.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,ratio_compresion))
 
 
 # Cajas de texto
@@ -290,7 +275,6 @@ infopto4entropia = Div(text="", width=400, height=50)
 inputs = column(
     temperatura_H,
     temperatura_L,
-    flujo_masico,
     ratio_compresion,
 #    infopto1temperatura,
 #     infopto1presion,
@@ -313,4 +297,3 @@ inputs = column(
 # Agregar al documento
 curdoc().add_root(row(inputs, plot, width=800))
 curdoc().title = "Ciclo de Rankine"
-#aqui estoy, hola amigos UwU
