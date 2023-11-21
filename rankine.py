@@ -159,10 +159,10 @@ def Calcular(TL,TH, CB):
     '''
     print(STATS)
     
-    Mostrar_resultados(Pres1,Pres2,Pres3,Pres4,Temp1,Temp2,Temp3,Temp4,h1,h2,h3,h4,s1,s2,s3,s4,Qin,Qout,n)
+    Mostrar_resultados(Pres1,Pres2,Pres3,Pres4,Temp1,Temp2,Temp3,Temp4,h1,h2,h3,h4,s1,s2,s3,s4,Qin,Qout,n,Win,W_tur)
 
 
-def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S3, S4,Qin, Qout, n):
+def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S3, S4,Qin, Qout, n,Win,W_tur):
     # Actualizar valores de Punto 1
     infopto1temperatura.text = f"Temperatura: {T1}"
     infopto1presion.text = f"Presión: {P1}"
@@ -183,9 +183,16 @@ def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S
 
     # Actualizar valores de Punto 4
     infopto4temperatura.text = f"Temperatura: {T4}"
-    infopto4presion.text = f"Q entrada: {Qin}"#Presion
-    infopto4entalpia.text = f"Q salida: {Qout}"#entalpia
-    infopto4entropia.text = f"Eficiencia: {n}"#entropia
+    infopto4presion.text = f"Presión: {P4}"
+    infopto4entalpia.text = f"Entalpía: {H4}"
+    infopto4entropia.text = f"Entropía: {S4}"
+    #la otra wea q falta
+    infobomba.text=f"El trabajo requerido por la bomba es de {round(Win,4)} [kJ/kg]"
+    infoturbina.text=f"El trabajo que produce la turbina es de {round(W_tur,4)} [kJ/kg]"
+    eficiencia.text=f"La eficiencia del sistema es de un {round(n,2)} %"
+    
+    Qentrada.text=f"Q entrada {Qin}"
+    Qsalida.text=f"Q salida {Qout}"
 
     entalpia = [S1, S2, S3, S4]
     temperatura = [T1, T2, T3, T4]
@@ -195,7 +202,7 @@ def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S
 # Actualizar la función de gráficos
 def actualizar_grafico(entalpia, temperatura):
     source.data = dict(x=entalpia, y=temperatura)
-   
+
 
 # Widgets
 plot = figure(
@@ -253,31 +260,96 @@ ratio_compresion.on_change('value', lambda attr, old, new: Calcular(temperatura_
 # Cajas de texto
 
 # Punto 1
-infopto1temperatura = Div(text="a", width=400, height=50)
-infopto1presion = Div(text="a", width=400, height=50)
-infopto1entalpia = Div(text="a", width=400, height=50)
-infopto1entropia = Div(text="a", width=400, height=50)
+
+infopto1temperatura = Div(text="", width=400, height=50)
+infopto1presion = Div(text="", width=400, height=50)
+infopto1entalpia = Div(text="", width=400, height=50)
+infopto1entropia = Div(text="", width=400, height=50)
 
 # Punto 2
+
 infopto2entalpia = Div(text="", width=400, height=50)
 infopto2entropia = Div(text="", width=400, height=50)
 infopto2presion =  Div(text="", width=400, height=50)
 infopto2temperatura = Div(text="", width=400, height=50)
 
 # Punto 3
+
 infopto3temperatura = Div(text="", width=400, height=50)
 infopto3presion = Div(text="", width=400, height=50)
 infopto3entalpia = Div(text="", width=400, height=50)
 infopto3entropia = Div(text="", width=400, height=50)
 
 # Punto 4
+
 infopto4temperatura = Div(text="", width=400, height=50)
 infopto4presion = Div(text="", width=400, height=50)
 infopto4entalpia = Div(text="", width=400, height=50)
 infopto4entropia = Div(text="", width=400, height=50)
 
+#las otras weas
+infobomba=Div(text="", width=400, height=50)
+infoturbina= Div(text="", width=400, height=50)
+eficiencia= Div(text="", width=400, height=50)
+Qentrada= Div(text="", width=400, height=50)
+Qsalida= Div( width=400, height=50)
+
 # Información
 
+info_proceso_1 = column(
+    Div(text="<h2>PROCESO 1</h2>", width=400, height=50),
+    infopto1temperatura,
+    infopto1presion,
+    infopto1entalpia,
+    infopto1entropia
+)
+
+info_proceso_2 = column(
+    Div(text="<h2>PROCESO 2</h2>", width=400, height=50),
+    infopto2temperatura,
+    infopto2presion,
+    infopto2entalpia,
+    infopto2entropia
+)
+
+info_proceso_3 = column(
+    Div(text="<h2>PROCESO 3</h2>", width=400, height=50),
+    infopto3temperatura,
+    infopto3presion,
+    infopto3entalpia,
+    infopto3entropia
+)
+
+info_proceso_4 = column(
+    Div(text="<h2>PROCESO 4</h2>", width=400, height=50),
+    infopto4temperatura,
+    infopto4presion,
+    infopto4entalpia,
+    infopto4entropia
+)
+# Información
+info_datos=column(
+    Div(text="<h2>Eficiencia </h2>", width=400, height=50),
+    infobomba,
+    infoturbina,
+    eficiencia,
+    Qentrada,
+    Qsalida,
+)
+
+info_procesos = column(
+    info_proceso_1,
+    info_proceso_2,
+    info_proceso_3,
+    info_proceso_4,
+    info_datos
+)
+
+inputs = column(
+    temperatura_H,
+    temperatura_L,
+    ratio_compresion,
+)
 # Organizar los widgets
 inputs = column(
     temperatura_H,
@@ -289,5 +361,6 @@ inputs = column(
 )
 
 # Agregar al documento
-curdoc().add_root(row(inputs, plot, width=800))
+layout = row(inputs, column(plot,info_procesos), width=600)
+curdoc().add_root(layout)
 curdoc().title = "Ciclo de Rankine"
