@@ -1,10 +1,9 @@
-import numpy as np
-from bokeh.io import curdoc
-from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource, Slider
-from bokeh.plotting import figure
+from bokeh.layouts import column, row
 from pyXSteam.XSteam import XSteam
-from bokeh.models import Div 
+from bokeh.plotting import figure
+from bokeh.models import Div
+from bokeh.io import curdoc
 
 
 # Crear la fuente de datos
@@ -13,7 +12,7 @@ Las unidades de medida que utiliza el XSteam con el systema "BARE" son las sigui
 - metros [m]
 - kilogramos [kg]
 - segundo [sec]
-- Kelvin [K]
+- Kelvin [°K]
 - Mega Pascales [MPa]*
 - Watts [W]
 
@@ -25,25 +24,31 @@ steamTable = XSteam(XSteam.UNIT_SYSTEM_BARE)
 La calidad del fluido en el punto 3 se considera como 1 al considerar el ciclo
 como un Ciclo de Rankine ideal, por lo mismo se establece que la calidad en el punto 1 es 0 
 '''
-
 X3 = 1
 X1 = 0
 
 source = ColumnDataSource(data=dict(x=[], y=[]))
 
-def Calcular(TL,TH, RC):
+curdoc().theme.theme = 'dark_minimal'
+
+def Calcular(TL,TH, CB):
     # Definir valores iniciales
     '''
+    TH: Temperatura salida de la caldera
+    TL: Temperatura salida del condensador
+    CB: Compresión de la bomba (en Mega Pascales)
+    
+    
     Las temperaturas por la librería de pyXSteam las está 
     calculando actualmente en Kelvin pero los sliders toman
-    la temperatura en Celcius.
+    la temperatura en Celcius.   
     '''
     TH = TH.value + 273.15
     TL = TL.value + 273.15
     
     # PUNTO 1 - Salida del condensador, antes de la bomba
     Temp1 = TL
-    Pres1 = 0.01 #kPa   
+    Pres1 = 0.01 #10 kPa
     h1 = steamTable.hL_t(Temp1)
     s1 = steamTable.sL_t(Temp1)
     
@@ -63,14 +68,8 @@ def Calcular(TL,TH, RC):
 
     
     # PUNTO 2 - Salida de la bomba, antes de la caldea
-    '''
-    El ratio de compresión de la bomba se calcula como:
-    R = P out/P in
-    Por lo tanto para calcular la presión de salida de la bomba sería:
-    P out = R * P in
-    '''
     s2 = s1
-    Pres2 = RC.value * Pres1
+    Pres2 = CB.value
     Temp2 = steamTable.t_ps(Pres2, s2)
 
     # Trabajo de entrada [Win] - BOMBA
@@ -122,7 +121,6 @@ def Calcular(TL,TH, RC):
     s4 = s3
     Pres4 = Pres1
     Temp4 = steamTable.t_ps(Pres4,s4)
-    # X4 = steamTable.x_ps(Pres4, s4)
     h4 = steamTable.h_ps(Pres4,s4)
     
     #trabajo de la turbina
@@ -150,7 +148,7 @@ def Calcular(TL,TH, RC):
     # n = (W_tur-Win)/Qin*100
     n = ((W_tur + Win)/Qin)*100
 
-    STATS = f''''
+    STATS = f'''
         El trabajo requerido por la bomba es de {round(Win,4)} [kJ/kg]
         El trabajo que produce la turbina es de {round(W_tur,4)} [kJ/kg]
         
@@ -162,7 +160,8 @@ def Calcular(TL,TH, RC):
     print(STATS)
     
     Mostrar_resultados(Pres1,Pres2,Pres3,Pres4,Temp1,Temp2,Temp3,Temp4,h1,h2,h3,h4,s1,s2,s3,s4,Qin,Qout,n)
-    
+
+
 def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S3, S4,Qin, Qout, n):
     # Actualizar valores de Punto 1
     infopto1temperatura.text = f"Temperatura: {T1}"
@@ -188,52 +187,64 @@ def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S
     infopto4entalpia.text = f"Q salida: {Qout}"#entalpia
     infopto4entropia.text = f"Eficiencia: {n}"#entropia
 
+    entalpia = [S1, S2, S3, S4]
+    temperatura = [T1, T2, T3, T4]
+    actualizar_grafico(entalpia, temperatura)
 
+
+# Actualizar la función de gráficos
+def actualizar_grafico(entalpia, temperatura):
+    source.data = dict(x=entalpia, y=temperatura)
+   
+
+# Widgets
 plot = figure(
-    height=500,
-    width=500,
-    title="Ciclo Rankine",
-    tools="crosshair, pan, reset, save, wheel_zoom",
-    x_axis_label="Entropía",
-    y_axis_label="Temperatura (K)",
-    x_range=(0, 10),
-    y_range=(0, 600)
+    height = 500,
+    width = 500,
+    title = "Ciclo Rankine",
+    tools = "crosshair, pan, reset, save, wheel_zoom",
+    toolbar_location = 'above',
+    x_axis_label = "Entropía",
+    y_axis_label = "Temperatura (K)",
+    x_range = (0, 10),
+    y_range = (0, 600)
 )
 
 plot.line(
     'x',
     'y',
-    source=source,
-    line_width=3,
-    line_alpha=0.6
+    source = source,
+    line_width = 3,
+    line_alpha = 0.6
 )
 
 
 temperatura_H = Slider(
-    title="Temperatura de salida Caldera (C)",
-    value=200,
-    start=110,
-    end=350,
-    step=10
+    title = "Temperatura de salida Caldera (C)",
+    value = 200,
+    start = 150,
+    end = 370,
+    step = 10
 )
 
 temperatura_L = Slider(
-    title="Temperatura de salida Condensador (C)",
-    value=30,
-    start=5,
-    end=60,
-    step=5
+    title = "Temperatura de salida Condensador (°C)",
+    value = 30,
+    start = 5,
+    end = 80,
+    step = 5
 )
+
 
 ratio_compresion = Slider(
-    title="Ratio de Compresión para la Bomba (MPa)",
-    value=0.01,
-    start=1.0,
-    end=5.0,
-    step=1
+    title = "Compresión de salida de la Bomba (MPa)",
+    value = 5,
+    start = 5.0,
+    end = 20.0,
+    step = 1
 )
 
-# Asociar la función de actualización al evento 'value_changed'
+# Actualizar los valores modificando los sliders
 temperatura_L.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,ratio_compresion))
 temperatura_H.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,ratio_compresion))
 ratio_compresion.on_change('value', lambda attr, old, new: Calcular(temperatura_L,temperatura_H,ratio_compresion))
@@ -242,47 +253,30 @@ ratio_compresion.on_change('value', lambda attr, old, new: Calcular(temperatura_
 # Cajas de texto
 
 # Punto 1
-
 infopto1temperatura = Div(text="a", width=400, height=50)
 infopto1presion = Div(text="a", width=400, height=50)
 infopto1entalpia = Div(text="a", width=400, height=50)
 infopto1entropia = Div(text="a", width=400, height=50)
 
 # Punto 2
-
 infopto2entalpia = Div(text="", width=400, height=50)
 infopto2entropia = Div(text="", width=400, height=50)
 infopto2presion =  Div(text="", width=400, height=50)
 infopto2temperatura = Div(text="", width=400, height=50)
 
 # Punto 3
-
 infopto3temperatura = Div(text="", width=400, height=50)
 infopto3presion = Div(text="", width=400, height=50)
 infopto3entalpia = Div(text="", width=400, height=50)
 infopto3entropia = Div(text="", width=400, height=50)
 
 # Punto 4
-
 infopto4temperatura = Div(text="", width=400, height=50)
 infopto4presion = Div(text="", width=400, height=50)
 infopto4entalpia = Div(text="", width=400, height=50)
 infopto4entropia = Div(text="", width=400, height=50)
 
 # Información
-
-# Actualizar la función de gráficos
-def actualizar_grafico(entalpia, temperatura):
-    source.data = dict(x=entalpia, y=temperatura)
-
-# Actualizar la función Mostrar_resultados
-def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S3, S4,Qin, Qout, n):
-    # ... (sin cambios)
-    
-    # Actualizar el gráfico
-    entalpia = [S1, S2, S3, S4]
-    temperatura = [T1, T2, T3, T4]
-    actualizar_grafico(entalpia, temperatura)
 
 # Organizar los widgets
 inputs = column(
