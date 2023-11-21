@@ -5,6 +5,7 @@ from bokeh.plotting import figure
 from bokeh.models import Div
 from bokeh.io import curdoc
 import numpy as np
+from bokeh.models import HTMLTemplateFormatter
 
 
 # Crear la fuente de datos
@@ -164,30 +165,29 @@ def Calcular(TL,TH, CB):
 
 
 def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S3, S4,Qin, Qout, n,Win,W_tur):
-    # Actualizar valores de Punto 1
+        #Proceso 1 
     infopto1temperatura.text = f"Temperatura: {T1}"
     infopto1presion.text = f"Presión: {P1}"
     infopto1entalpia.text = f"Entalpía: {H1}"
     infopto1entropia.text = f"Entropía: {S1}"
-
-    # Actualizar valores de Punto 2
+    #Proceso 2 
     infopto2temperatura.text = f"Temperatura: {T2}"
     infopto2presion.text = f"Presión: {P2}"
     infopto2entalpia.text = f"Entalpía: {H2}"
     infopto2entropia.text = f"Entropía: {S2}"
 
-    # Actualizar valores de Punto 3
+    #Proceso 3 
     infopto3temperatura.text = f"Temperatura: {T3}"
     infopto3presion.text = f"Presión: {P3}"
     infopto3entalpia.text = f"Entalpía: {H3}"
     infopto3entropia.text = f"Entropía: {S3}"
 
-    # Actualizar valores de Punto 4
+    #Proceso 4
     infopto4temperatura.text = f"Temperatura: {T4}"
     infopto4presion.text = f"Presión: {P4}"
     infopto4entalpia.text = f"Entalpía: {H4}"
     infopto4entropia.text = f"Entropía: {S4}"
-    #la otra wea q falta
+    #Datos eficiencia
     infobomba.text=f"El trabajo requerido por la bomba es de {round(Win,4)} [kJ/kg]"
     infoturbina.text=f"El trabajo que produce la turbina es de {round(W_tur,4)} [kJ/kg]"
     eficiencia.text=f"La eficiencia del sistema es de un {round(n,2)} %"
@@ -195,14 +195,14 @@ def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S
     Qentrada.text=f"Q entrada {Qin}"
     Qsalida.text=f"Q salida {Qout}"
 
-    entalpia = [S1, S2, S3, S4]
+    entropia = [S1, S2, S3, S4]
     temperatura = [T1, T2, T3, T4]
-    actualizar_grafico(entalpia, temperatura)
+    actualizar_grafico(entropia, temperatura)
 
 
 # Actualizar la función de gráficos
-def actualizar_grafico(entalpia, temperatura):
-    source.data = dict(x=entalpia, y=temperatura)
+def actualizar_grafico(entropia, temperatura):
+    source.data = dict(x=entropia, y=temperatura)
 
 
 # Widgets
@@ -228,7 +228,7 @@ plot.line(
 
 
 temperatura_H = Slider(
-    title = "Temperatura de salida Caldera (C)",
+    title ="Temperatura de salida Caldera (C)",
     value = 200,
     start = 150,
     end = 370,
@@ -236,7 +236,7 @@ temperatura_H = Slider(
 )
 
 temperatura_L = Slider(
-    title = "Temperatura de salida Condensador (°C)",
+    title ="Temperatura de salida Condensador (°C)",
     value = 30,
     start = 5,
     end = 80,
@@ -262,43 +262,62 @@ ratio_compresion.on_change('value', lambda attr, old, new: Calcular(temperatura_
 
 # Punto 1
 
-infopto1temperatura = Div(text="", width=400, height=50)
-infopto1presion = Div(text="", width=400, height=50)
-infopto1entalpia = Div(text="", width=400, height=50)
-infopto1entropia = Div(text="", width=400, height=50)
+infopto1temperatura = Div(width=400, height=50)
+infopto1presion = Div(width=400, height=50)
+infopto1entalpia = Div(width=400, height=50)
+infopto1entropia = Div(width=400, height=50)
 
 # Punto 2
 
-infopto2entalpia = Div(text="", width=400, height=50)
-infopto2entropia = Div(text="", width=400, height=50)
-infopto2presion =  Div(text="", width=400, height=50)
-infopto2temperatura = Div(text="", width=400, height=50)
+infopto2entalpia = Div(width=400, height=50)
+infopto2entropia = Div(width=400, height=50)
+infopto2presion =  Div( width=400, height=50)
+infopto2temperatura = Div( width=400, height=50)
 
 # Punto 3
 
-infopto3temperatura = Div(text="", width=400, height=50)
-infopto3presion = Div(text="", width=400, height=50)
-infopto3entalpia = Div(text="", width=400, height=50)
-infopto3entropia = Div(text="", width=400, height=50)
+infopto3temperatura = Div(width=400, height=50)
+infopto3presion = Div(width=400, height=50)
+infopto3entalpia = Div(width=400, height=50)
+infopto3entropia = Div(width=400, height=50)
 
 # Punto 4
 
-infopto4temperatura = Div(text="", width=400, height=50)
-infopto4presion = Div(text="", width=400, height=50)
-infopto4entalpia = Div(text="", width=400, height=50)
-infopto4entropia = Div(text="", width=400, height=50)
+infopto4temperatura = Div( width=400, height=50)
+infopto4presion = Div( width=400, height=50)
+infopto4entalpia = Div( width=400, height=50)
+infopto4entropia = Div( width=400, height=50)
 
-#las otras weas
-infobomba=Div(text="", width=400, height=50)
-infoturbina= Div(text="", width=400, height=50)
-eficiencia= Div(text="", width=400, height=50)
-Qentrada= Div(text="", width=400, height=50)
+#Eficiencia
+infobomba=Div( width=400, height=50)
+infoturbina= Div( width=400, height=50)
+eficiencia= Div(width=400, height=50)
+Qentrada= Div( width=400, height=50)
 Qsalida= Div( width=400, height=50)
+
+
+
+#probandoo
+estilos_css = """
+<style>
+body {
+    font-family: monospace; 
+    background-color: #f4f4f4; 
+    color: #333; 
+}
+
+h2 {
+    color: #428bca; 
+}
+
+</style>
+"""
+
 
 # Información
 
 info_proceso_1 = column(
-    Div(text="<h2>PROCESO 1</h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>PROCESO 1</h2>", width=400, height=50),
     infopto1temperatura,
     infopto1presion,
     infopto1entalpia,
@@ -306,7 +325,7 @@ info_proceso_1 = column(
 )
 
 info_proceso_2 = column(
-    Div(text="<h2>PROCESO 2</h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>PROCESO 2</h2>", width=400, height=50),
     infopto2temperatura,
     infopto2presion,
     infopto2entalpia,
@@ -314,7 +333,7 @@ info_proceso_2 = column(
 )
 
 info_proceso_3 = column(
-    Div(text="<h2>PROCESO 3</h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>PROCESO 3</h2>", width=400, height=50),
     infopto3temperatura,
     infopto3presion,
     infopto3entalpia,
@@ -322,7 +341,7 @@ info_proceso_3 = column(
 )
 
 info_proceso_4 = column(
-    Div(text="<h2>PROCESO 4</h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>PROCESO 4</h2>", width=400, height=50),
     infopto4temperatura,
     infopto4presion,
     infopto4entalpia,
@@ -330,7 +349,7 @@ info_proceso_4 = column(
 )
 # Información
 info_datos=column(
-    Div(text="<h2>Eficiencia </h2>", width=400, height=50),
+    Div(text=estilos_css + "<h2>Eficiencia </h2>", width=400, height=50),
     infobomba,
     infoturbina,
     eficiencia,
@@ -382,7 +401,18 @@ plot.line(
 )
 
 
-# Agregar al documento
-layout = row(inputs, column(plot,info_procesos), width=600)
+
+layout = row(
+    inputs,
+    plot,
+    column(
+        row(column(info_proceso_1), column(info_proceso_2)),
+        row(column(info_proceso_3), column(info_proceso_4)),
+        info_datos,
+    ),
+    width=800
+)
+
+
 curdoc().add_root(layout)
 curdoc().title = "Ciclo de Rankine"
