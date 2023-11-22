@@ -1,4 +1,4 @@
-from bokeh.models import ColumnDataSource, Slider
+from bokeh.models import ColumnDataSource, Slider, GlyphRenderer
 from bokeh.layouts import column, row
 from pyXSteam.XSteam import XSteam
 from bokeh.plotting import figure
@@ -90,7 +90,7 @@ def Calcular(TL,TH, CB):
 
 
 def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S3, S4,Qin, Qout, n,W_bmb,W_tur):
-        #Proceso 1 
+    #Proceso 1 
     infopto1temperatura.text = f"Temperatura: {round(T1,4)} [°K]"
     infopto1presion.text = f"Presión: {round(P1,4)} [MPa]"
     infopto1entalpia.text = f"Entalpía: {round(H1,4)} [kJ/kg]"
@@ -128,6 +128,15 @@ def Mostrar_resultados(P1, P2, P3, P4, T1, T2, T3, T4, H1, H2, H3, H4, S1, S2, S
 # Actualizar la función de gráficos
 def actualizar_grafico(entropia, temperatura):
     source.data = dict(x=entropia, y=temperatura)
+    
+    # Elimina el rastro de la linea anterior
+    for renderer in plot.renderers:
+        if isinstance(renderer, GlyphRenderer) and renderer.glyph.line_color == '#515151':
+            plot.renderers.remove(renderer)
+
+    # Une con una linea el punto 1 y 4
+    plot.line(x=[entropia[0], entropia[3]], y=[temperatura[0], temperatura[3]], line_color='#515151', line_width=3)
+
 
 
 # Widgets
@@ -148,7 +157,8 @@ plot.line(
     'y',
     source = source,
     line_width = 3,
-    line_alpha = 0.6
+    line_alpha = 0.6,
+    line_color = '#000000'
 )
 
 titulo = Div(
